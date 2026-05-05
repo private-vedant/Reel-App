@@ -89,6 +89,30 @@ const videos = [
     tags: ['Tech', 'Review'],
     source: require('../../assets/videos/VID_20260210_021253_958.mp4'),
   },
+  {
+    id: 'video-9',
+    title: 'Video 9',
+    tags: ['Tech', 'Review'],
+    source: require('../../assets/videos/VID_20260219_002548_856.mp4'),
+  },
+  {
+    id: 'video-10',
+    title: 'Video 10',
+    tags: ['Tech', 'Review'],
+    source: require('../../assets\videos\VID_20260219_003727_347.mp4'),
+  },
+  {
+    id: 'video118',
+    title: 'Video 11',
+    tags: ['Tech', 'Review'],
+    source: require('../../assets\videos\VID_20260224_090040_811.mp4'),
+  },
+  {
+    id: 'video-12',
+    title: 'Video 12',
+    tags: ['Tech', 'Review'],
+    source: require('../../assets\videos\VID_20260224_090208_250.mp4'),
+  },
 ];
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
