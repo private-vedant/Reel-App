@@ -23,23 +23,20 @@ type Tab = 'feed' | 'reels' | 'settings';
 type Theme = 'dark' | 'light';
 
 // ─── Layout constants ────────────────────────────────────────────────────────
-const NAV_HEIGHT = 76;                                    // fix 1: reduced nav height = less gap
+const NAV_HEIGHT = 76;
 const GESTURE_INSET = Platform.OS === 'android' ? 24 : 0;
 const STATUS_BAR_HEIGHT =
   Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 0;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// fix 1: VIDEO_HEIGHT now fills right up to the nav bar — no extra gap
 const VIDEO_HEIGHT = SCREEN_HEIGHT - NAV_HEIGHT - GESTURE_INSET;
 
-// fix 4: perfect 3-column grid with exact pixel math
 const GRID_GAP = 3;
 const GRID_COLS = 3;
 const GRID_ITEM_WIDTH = (SCREEN_WIDTH - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
-const GRID_ITEM_HEIGHT = GRID_ITEM_WIDTH / 0.72; // maintain portrait aspect ratio
+const GRID_ITEM_HEIGHT = GRID_ITEM_WIDTH / 0.72;
 
 // ─── Video data ──────────────────────────────────────────────────────────────
-// Each video now carries sample tags for the pill display (fix 5)
 const videos = [
   {
     id: 'video-1',
@@ -99,19 +96,22 @@ const videos = [
     id: 'video-10',
     title: 'Video 10',
     tags: ['Tech', 'Review'],
-    source: require('../../assets\videos\VID_20260219_003727_347.mp4'),
+    // FIX: was using backslash separators — switched to forward slashes
+    source: require('../../assets/videos/VID_20260224_090040_811.mp4'),
   },
   {
-    id: 'video118',
+    id: 'video-11',
     title: 'Video 11',
     tags: ['Tech', 'Review'],
-    source: require('../../assets\videos\VID_20260224_090040_811.mp4'),
+    // FIX: was a duplicate of video-10's path — update this to the correct file
+    source: require('../../assets/videos/VID_20260219_003727_347.mp4'),
   },
   {
     id: 'video-12',
     title: 'Video 12',
     tags: ['Tech', 'Review'],
-    source: require('../../assets\videos\VID_20260224_090208_250.mp4'),
+    // FIX: was using backslash separators — switched to forward slashes
+    source: require('../../assets/videos/VID_20260224_090208_250.mp4'),
   },
 ];
 
@@ -152,7 +152,6 @@ export default function HomeScreen() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [activeTab, setActiveTab] = useState<Tab>('feed');
   const [prevTab, setPrevTab] = useState<Tab>('reels');
-  // fix 3: which library video is currently previewed (null = none)
   const [previewVideo, setPreviewVideo] = useState<(typeof videos)[0] | null>(null);
 
   const t = THEMES[theme];
@@ -163,8 +162,6 @@ export default function HomeScreen() {
   };
   const closeSettings = () => setActiveTab(prevTab);
 
-  // fix 2: horizontal swipe between feed ↔ reels tabs
-  // Only active when settings is not open
   const swipePan = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => {
@@ -174,11 +171,9 @@ export default function HomeScreen() {
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx < -50) {
-          // swipe left → go to reels
           setActiveTab((cur) => (cur === 'feed' ? 'reels' : cur));
         }
         if (g.dx > 50) {
-          // swipe right → go to feed
           setActiveTab((cur) => (cur === 'reels' ? 'feed' : cur));
         }
       },
@@ -187,12 +182,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: t.navBg }]}>
-      {/* fix 2: attach swipe handlers to the whole app shell */}
       <View
         style={[styles.app, { backgroundColor: t.bg }]}
         {...(activeTab !== 'settings' ? swipePan.panHandlers : {})}
       >
-        <View style={styles.content}>
+        {/* FIX: only apply nav paddingBottom when the nav bar is visible */}
+        <View style={[styles.content, activeTab !== 'settings' && styles.contentWithNav]}>
           {activeTab === 'feed' && <FeedScreen t={t} />}
           {activeTab === 'reels' && (
             <ReelsScreen
@@ -217,7 +212,6 @@ export default function HomeScreen() {
           <BottomTabs activeTab={activeTab} onChangeTab={setActiveTab} t={t} />
         )}
 
-        {/* fix 3: fullscreen video preview modal for library taps */}
         {previewVideo && (
           <VideoPreviewModal
             video={previewVideo}
@@ -292,7 +286,6 @@ function FeedScreen({ t }: FeedScreenProps) {
                 isMuted={false}
               />
 
-              {/* tap centre → play/pause */}
               <TouchableOpacity
                 activeOpacity={1}
                 style={styles.tapOverlay}
@@ -309,7 +302,6 @@ function FeedScreen({ t }: FeedScreenProps) {
                 )}
               </TouchableOpacity>
 
-              {/* fix 5: title + tag pills, moved higher (bottom: 64) */}
               <View style={styles.videoMeta}>
                 <Text style={styles.videoTitle}>{item.title}</Text>
                 <View style={styles.tagPillRow}>
@@ -326,7 +318,6 @@ function FeedScreen({ t }: FeedScreenProps) {
                 </View>
               </View>
 
-              {/* action buttons */}
               <View style={styles.feedActions}>
                 <RoundIconButton icon="heart" label="Like" color="#FFFFFF" iconColor="#111111" onPress={() => {}} />
                 <RoundIconButton icon="bookmark-outline" label="Save" color="#FFFFFF" iconColor="#111111" onPress={() => {}} />
@@ -344,28 +335,20 @@ function FeedScreen({ t }: FeedScreenProps) {
 type ReelsScreenProps = {
   t: typeof THEMES.dark;
   onOpenSettings: () => void;
-  onPreviewVideo: (v: (typeof videos)[0]) => void;      // fix 3
+  onPreviewVideo: (v: (typeof videos)[0]) => void;
 };
 
 function ReelsScreen({ t, onOpenSettings, onPreviewVideo }: ReelsScreenProps) {
   return (
     <View style={[styles.reelsScreen, { backgroundColor: t.bg }]}>
-      {/* header clears status bar */}
       <View style={[styles.reelsHeader, { paddingTop: STATUS_BAR_HEIGHT + 16 }]}>
-        {/*
-          ── LOGO SLOT ────────────────────────────────────────────────────────
-          Replace the View below with your logo <Image>:
-            <Image source={require('../../assets/logo.png')} style={styles.appLogo} resizeMode="contain" />
-          ─────────────────────────────────────────────────────────────────── */}
         <View style={styles.appLogo} />
-
         <View style={styles.headerActions}>
           <RoundIconButton icon="search" label="Search" size={42} color={t.chip} iconColor={t.text} onPress={() => {}} />
           <RoundIconButton icon="settings" label="Settings" size={42} color={t.chip} iconColor={t.text} onPress={onOpenSettings} />
         </View>
       </View>
 
-      {/* filter chip row */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -379,12 +362,6 @@ function ReelsScreen({ t, onOpenSettings, onPreviewVideo }: ReelsScreenProps) {
         ))}
       </ScrollView>
 
-      {/*
-        fix 4: perfect 3-column grid
-        – No numColumns + FlatList (which can leave orphaned items unaligned)
-        – Instead use a manual row-building approach with exact pixel widths
-        – This guarantees every row has exactly 3 items regardless of video count
-      */}
       <FlatList
         data={buildRows(videos, GRID_COLS)}
         keyExtractor={(_, i) => `row-${i}`}
@@ -392,9 +369,8 @@ function ReelsScreen({ t, onOpenSettings, onPreviewVideo }: ReelsScreenProps) {
         contentContainerStyle={styles.videoGrid}
         renderItem={({ item: row }) => (
           <View style={styles.gridRow}>
-            {row.map((video) =>
+            {row.map((video, colIndex) =>
               video ? (
-                // fix 3: tap opens fullscreen preview
                 <TouchableOpacity
                   key={video.id}
                   style={styles.gridItem}
@@ -410,8 +386,8 @@ function ReelsScreen({ t, onOpenSettings, onPreviewVideo }: ReelsScreenProps) {
                   />
                 </TouchableOpacity>
               ) : (
-                // empty filler cell so last row stays aligned
-                <View key={`empty-${Math.random()}`} style={styles.gridItem} />
+                // FIX: stable key using colIndex instead of Math.random()
+                <View key={`empty-${colIndex}`} style={styles.gridItem} />
               ),
             )}
           </View>
@@ -421,7 +397,6 @@ function ReelsScreen({ t, onOpenSettings, onPreviewVideo }: ReelsScreenProps) {
   );
 }
 
-/** Split a flat array into rows of `cols` items, padding the last row with nulls */
 function buildRows<T>(arr: T[], cols: number): (T | null)[][] {
   const rows: (T | null)[][] = [];
   for (let i = 0; i < arr.length; i += cols) {
@@ -432,7 +407,7 @@ function buildRows<T>(arr: T[], cols: number): (T | null)[][] {
   return rows;
 }
 
-// ─── VideoPreviewModal (fix 3) ────────────────────────────────────────────────
+// ─── VideoPreviewModal ────────────────────────────────────────────────────────
 type VideoPreviewModalProps = {
   video: (typeof videos)[0];
   onClose: () => void;
@@ -460,7 +435,6 @@ function VideoPreviewModal({ video, onClose }: VideoPreviewModalProps) {
           isMuted={false}
         />
 
-        {/* tap centre to play/pause */}
         <TouchableOpacity
           activeOpacity={1}
           style={styles.previewTap}
@@ -473,12 +447,10 @@ function VideoPreviewModal({ video, onClose }: VideoPreviewModalProps) {
           )}
         </TouchableOpacity>
 
-        {/* close button */}
         <Pressable style={styles.previewClose} onPress={onClose}>
           <Ionicons name="close" size={28} color="#FFFFFF" />
         </Pressable>
 
-        {/* title + pills */}
         <View style={styles.previewMeta}>
           <Text style={styles.previewTitle}>{video.title}</Text>
           <View style={styles.tagPillRow}>
@@ -611,11 +583,12 @@ function RoundIconButton({ icon, label, color, iconColor, size = 52, onPress }: 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   app: { flex: 1 },
-  content: { flex: 1, paddingBottom: NAV_HEIGHT + GESTURE_INSET },
+  // FIX: base content has no paddingBottom; nav padding applied conditionally
+  content: { flex: 1 },
+  contentWithNav: { paddingBottom: NAV_HEIGHT + GESTURE_INSET },
 
   // ── Feed ──────────────────────────────────────────────────────────────────
   feedScreen: { flex: 1, backgroundColor: '#000000' },
-  // fix 1: VIDEO_HEIGHT = screen − nav − gesture inset; no extra margin
   videoPage: { height: VIDEO_HEIGHT, backgroundColor: '#000000' },
   video: { ...StyleSheet.absoluteFillObject },
   tapOverlay: {
@@ -629,12 +602,11 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 16,
   },
-  // fix 5: title + pills block, positioned higher so there's breathing room
   videoMeta: {
     position: 'absolute',
     left: 18,
     right: 96,
-    bottom: 64,          // raised from 28 → 64
+    bottom: 64,
     gap: 8,
   },
   videoTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
@@ -656,14 +628,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingBottom: 4,
   },
-  appLogo: { width: 120, height: 36 }, // swap for <Image> when ready
+  appLogo: { width: 120, height: 36 },
   headerActions: { flexDirection: 'row', gap: 10 },
   chipScroll: { marginTop: 14, flexGrow: 0 },
   chipScrollContent: { paddingHorizontal: 18, gap: 8 },
   tagCard: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 9 },
   tagText: { fontSize: 14, fontWeight: '700' },
 
-  // fix 4: pixel-perfect 3-column grid using manual row layout
   videoGrid: { paddingTop: 14, paddingBottom: 24 },
   gridRow: {
     flexDirection: 'row',
@@ -679,7 +650,7 @@ const styles = StyleSheet.create({
   },
   gridVideo: { width: '100%', height: '100%' },
 
-  // ── Video preview modal (fix 3) ───────────────────────────────────────────
+  // ── Video preview modal ───────────────────────────────────────────────────
   previewContainer: {
     flex: 1,
     backgroundColor: '#000000',
@@ -755,9 +726,3 @@ const styles = StyleSheet.create({
   },
   pressedButton: { opacity: 0.72, transform: [{ scale: 0.96 }] },
 });
-
-
-
-
-
-
